@@ -1,0 +1,57 @@
+{
+  "name": "JamGameLuau",
+"tree": {
+		"$className": "DataModel",
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"$path": "src/ServerScriptService",
+			"$ignoreUnknownInstances": true
+		},
+		"ServerStorage": {
+			"$className": "ServerStorage",
+			"$path": "src/ServerStorage",
+			"$ignoreUnknownInstances": true
+		},
+		"ReplicatedFirst": {
+			"$className": "ReplicatedFirst",
+			"$path": "src/ReplicatedFirst",
+			"$ignoreUnknownInstances": true
+		},
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"$path": "src/ReplicatedStorage",
+			"$ignoreUnknownInstances": true
+		},
+		"StarterGui": {
+			"$className": "StarterGui",
+			"$path": "src/StarterGui",
+			"$ignoreUnknownInstances": true
+		},
+		"StarterPack": {
+			"$className": "StarterPack",
+			"$path": "src/StarterPack",
+			"$ignoreUnknownInstances": true
+		},
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+			"StarterPlayerScripts": {
+				"$className": "StarterPlayerScripts",
+				"$path": "src/StarterPlayer/StarterPlayerScripts",
+				"$ignoreUnknownInstances": true
+			},
+			"StarterCharacterScripts": {
+				"$className": "StarterCharacterScripts",
+				"$path": "src/StarterPlayer/StarterCharacterScripts",
+				"$ignoreUnknownInstances": true
+			},
+			"$path": "src/StarterPlayer",
+			"$ignoreUnknownInstances": true
+		},
+		"HttpService": {
+			"$className": "HttpService",
+			"$properties": {
+				"HttpEnabled": true
+			}
+		}
+	}
+}

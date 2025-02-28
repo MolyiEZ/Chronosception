@@ -1,0 +1,9 @@
+{
+    "cSpell.words": [
+        "Chronosception",
+        "LERP"
+    ],
+    "robloxLsp.diagnostics.disable": [
+        "unused-local"
+    ]
+}
