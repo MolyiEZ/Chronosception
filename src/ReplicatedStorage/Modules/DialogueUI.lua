@@ -23,8 +23,8 @@ local DialogueNext = DialogueFrame:WaitForChild("Next") :: TextLabel
 local DialoguePerson = DialogueFrame:WaitForChild("Person") :: ImageLabel
 
 local Dialogue = {}
-local isTyping, isVisible = false, false
-local activeConnections = {}
+local IsTyping, IsVisible = false, false
+local ActiveConnections = {}
 local Persons = {
 	[ECharacter.You] = "rbxassetid://72889430595307",
 	[ECharacter.YouIteration] = "rbxassetid://134187447504257",
@@ -48,187 +48,193 @@ local BUTTON = Enum.KeyCode.F
 
 local fadeInInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 local fadeOutInfo = TweenInfo.new(FADE_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.In)
-local dotAnimationThread
+local DotsThread
 
 local function CleanupDialogue()
-	for _, conn in ipairs(activeConnections) do
-		if conn and conn.Connected then conn:Disconnect() end
+	for _, Connection in ipairs(ActiveConnections) do
+		if Connection and Connection.Connected then Connection:Disconnect() end
 	end
 
-	activeConnections = {}
-	if dotAnimationThread then
-		task.cancel(dotAnimationThread)
-		dotAnimationThread = nil
+	ActiveConnections = {}
+	if DotsThread then
+		task.cancel(DotsThread)
+		DotsThread = nil
 	end
 
-	for _, child in ipairs(DialogueFrame:GetChildren()) do
-		if child:IsA("Sound") then child:Destroy() end
+	for _, Sound in ipairs(DialogueFrame:GetChildren()) do
+		if Sound:IsA("Sound") then Sound:Destroy() end
 	end
 
-	isTyping = false
+	IsTyping = false
 	DialogueNext.Visible = false
 end
 
 local function StartDotAnimation(baseText)
-	if dotAnimationThread then task.cancel(dotAnimationThread) end
+	if DotsThread then task.cancel(DotsThread) end
 	DialogueNext.Visible = true
-	local index = 1
-	dotAnimationThread = task.spawn(function()
+	local Index = 1
+	DotsThread = task.spawn(function()
 		while true do
-			DialogueNext.Text = baseText .. DOT_PATTERNS[index]
-			index = (index % #DOT_PATTERNS) + 1
+			DialogueNext.Text = baseText .. DOT_PATTERNS[Index]
+			Index = (Index % #DOT_PATTERNS) + 1
 			task.wait(DOT_SPEED)
 		end
 	end)
 end
 
 local function StopDotAnimation()
-	if dotAnimationThread then task.cancel(dotAnimationThread) end
-	dotAnimationThread = nil
+	if DotsThread then task.cancel(DotsThread) end
+	DotsThread = nil
 	DialogueNext.Visible = false
 end
 
 local function PlayTalkSound(person: string)
-	local sound = Sounds[person]:Clone()
-	sound.Parent = DialogueFrame
-	sound.PlaybackSpeed = math.random()*(MAX_PITCH - MIN_PITCH) + MIN_PITCH
-	sound:Play()
-	sound.Ended:Once(function() sound:Destroy() end)
+	local Sound = Sounds[person]:Clone()
+	Sound.Parent = DialogueFrame
+	Sound.PlaybackSpeed = math.random() * (MAX_PITCH - MIN_PITCH) + MIN_PITCH
+	Sound:Play()
+	Sound.Ended:Once(function() Sound:Destroy() end)
 end
 
-local function GetClosingTag(openTag)
-	local tagName = openTag:match("<(%w+)")
-	return tagName and ("</" .. tagName .. ">") or ""
+local function GetClosingTag(openTag: string)
+	local TagName = openTag:match("<(%w+)")
+	return TagName and ("</" .. TagName .. ">") or ""
 end
 
-local function Tokenize(input)
-	local tokens = {}
-	local pos = 1
-	while pos <= #input do
-		local s, e = input:find("<.->", pos)
-		if s then
-			if s > pos then
-				table.insert(tokens, { type = "text", content = input:sub(pos, s - 1) })
+local function Tokenize(input: string)
+	local Tokens = {}
+	local Index = 1
+	while Index <= #input do
+		local Start, End = input:find("<.->", Index)
+		if Start then
+			if Start > Index then
+				table.insert(Tokens, { Type = "Text", Content = input:sub(Index, Start - 1) })
 			end
-			table.insert(tokens, { type = "tag", content = input:sub(s, e) })
-			pos = e + 1
+			table.insert(Tokens, { Type = "Tag", Content = input:sub(Start, End) })
+			Index = End + 1
 		else
-			table.insert(tokens, { type = "text", content = input:sub(pos) })
+			table.insert(Tokens, { Type = "Text", Content = input:sub(Index) })
 			break
 		end
 	end
-	return tokens
+
+	return Tokens
 end
 
-local function ShallowCopy(t)
-	local copy = {}
-	for i, v in ipairs(t) do
-		copy[i] = v
+local function CopyArray(arr: table)
+	local Copy = {}
+
+	for i, v in ipairs(arr) do
+		Copy[i] = v
 	end
-	return copy
+
+	return Copy
 end
 
-local function ParseSegments(tokens)
-	local segments = {}
-	local activeStack = {}
-	local currentText = ""
-	for _, token in ipairs(tokens) do
-		if token.type == "tag" then
-			if #currentText > 0 then
-				table.insert(segments, { text = currentText, formatting = ShallowCopy(activeStack) })
-				currentText = ""
+local function ParseSegments(tokens: table)
+	local Segments = {}
+	local ActiveStack = {}
+	local CurrentText = ""
+
+	for _, Token in ipairs(tokens) do
+		if Token.Type == "Tag" then
+			if #CurrentText > 0 then
+				table.insert(Segments, { Text = CurrentText, Formatting = CopyArray(ActiveStack) })
+				CurrentText = ""
 			end
 
-			if token.content:sub(-2) == "/>" then
-				table.insert(segments, { text = token.content, formatting = nil, isSelfClosing = true })
-			elseif token.content:sub(2,2) == "/" then
-				table.remove(activeStack)
+			if Token.Content:sub(-2) == "/>" then
+				table.insert(Segments, { Text = Token.Content, Formatting = nil, IsSelfClosing = true })
+			elseif Token.Content:sub(2,2) == "/" then
+				table.remove(ActiveStack)
 			else
-				table.insert(activeStack, token.content)
+				table.insert(ActiveStack, Token.Content)
 			end
 		else
-			currentText = currentText .. token.content
+			CurrentText = CurrentText .. Token.Content
 		end
 	end
-	if #currentText > 0 then
-		table.insert(segments, { text = currentText, formatting = ShallowCopy(activeStack) })
+
+	if #CurrentText > 0 then
+		table.insert(Segments, { Text = CurrentText, Formatting = CopyArray(ActiveStack) })
 	end
-	return segments
+
+	return Segments
 end
 
-local function GetFormatTags(formatting)
-	local openStr = ""
-	local closeStr = ""
+local function GetFormatTags(formatting: table)
+	local OpenStr = ""
+	local CloseStr = ""
 	if formatting then
-		for _, tag in ipairs(formatting) do
-			openStr = openStr .. tag
-			closeStr = GetClosingTag(tag) .. closeStr
+		for _, Tag in ipairs(formatting) do
+			OpenStr = OpenStr .. Tag
+			CloseStr = GetClosingTag(Tag) .. CloseStr
 		end
 	end
-	return openStr, closeStr
+	return OpenStr, CloseStr
 end
 
-local function AnimateText(person, inputText)
-    local tokens = Tokenize(inputText)
-    local segments = ParseSegments(tokens)
-    local finalText = ""
-    local timeAccumulator = 0
-    local soundAccumulator = 0
-    local lastTime = os.clock()
+local function AnimateText(person: string, inputText: string)
+    local Tokens = Tokenize(inputText)
+    local Segments = ParseSegments(Tokens)
+    local FinalText = ""
+    local TimeAccumulator = 0
+    local SoundAccumulator = 0
+    local LastTime = os.clock()
     
-    for _, seg in ipairs(segments) do
-        if not isTyping then
+    for _, Seg in ipairs(Segments) do
+        if not IsTyping then
             DialogueText.Text = inputText
             return
         end
 
-        if seg.isSelfClosing then
-            finalText = finalText .. seg.text
-            DialogueText.Text = finalText
+        if Seg.IsSelfClosing then
+            FinalText = FinalText .. Seg.Text
+            DialogueText.Text = FinalText
             continue
         end
 
-        local openStr, closeStr = GetFormatTags(seg.formatting)
-        local currentSegmentRevealed = ""
-        local i = 1
+        local OpenStr, CloseStr = GetFormatTags(Seg.Formatting)
+        local CurrentSegmentRevealed = ""
+        local Index = 1
 
-        while i <= #seg.text do
-            if not isTyping then
+        while Index <= #Seg.Text do
+            if not IsTyping then
                 DialogueText.Text = inputText
                 return
             end
 
-            local currentTime = os.clock()
-            local deltaTime = currentTime - lastTime
-            timeAccumulator = timeAccumulator + deltaTime
-            soundAccumulator = soundAccumulator + deltaTime
-            lastTime = currentTime
+            local CurrentTime = os.clock()
+            local dt = CurrentTime - LastTime
+            TimeAccumulator = TimeAccumulator + dt
+            SoundAccumulator = SoundAccumulator + dt
+            LastTime = CurrentTime
 
-            local charsToShow = math.floor(timeAccumulator / NORMAL_SPEED)
-            if charsToShow > 0 then
-                timeAccumulator = timeAccumulator % NORMAL_SPEED
-                local endIndex = math.min(i + charsToShow - 1, #seg.text)
-                local chars = seg.text:sub(i, endIndex)
+            local CharsToShow = math.floor(TimeAccumulator / NORMAL_SPEED)
+            if CharsToShow > 0 then
+                TimeAccumulator = TimeAccumulator % NORMAL_SPEED
+                local EndIndex = math.min(Index + CharsToShow - 1, #Seg.Text)
+                local Chars = Seg.Text:sub(Index, EndIndex)
 
-                currentSegmentRevealed = currentSegmentRevealed .. chars
-                DialogueText.Text = finalText .. openStr .. currentSegmentRevealed .. closeStr
+                CurrentSegmentRevealed = CurrentSegmentRevealed .. Chars
+                DialogueText.Text = FinalText .. OpenStr .. CurrentSegmentRevealed .. CloseStr
 
-                if isTyping and soundAccumulator >= SOUND_SPEED then
+                if IsTyping and SoundAccumulator >= SOUND_SPEED then
                     PlayTalkSound(person)
-                    soundAccumulator = 0
+                    SoundAccumulator = 0
                 end
                 
-                i = endIndex + 1
+                Index = EndIndex + 1
             end
 
             RunService.Heartbeat:Wait()
         end
 
-        finalText = finalText .. openStr .. currentSegmentRevealed .. closeStr
+        FinalText = FinalText .. OpenStr .. CurrentSegmentRevealed .. CloseStr
     end
 end
 
-function Dialogue.Talk(person: string, text: string, maxTime: number?)
+function Dialogue.Talk(person: string, text: string)
 	CleanupDialogue()
 	RunService.Heartbeat:Wait()
 	CleanupDialogue()
@@ -236,58 +242,57 @@ function Dialogue.Talk(person: string, text: string, maxTime: number?)
 
 	DialoguePerson.Image = Persons[person] or ""
 
-	isVisible = true
-	isTyping = true
+	IsVisible = true
+	IsTyping = true
 	DialogueName.Text = person
 	DialogueGroup.GroupTransparency = 1
 
 	DialogueText.Text = ""
 
-	local fadeIn = TweenService:Create(DialogueGroup, fadeInInfo, {GroupTransparency = 0})
-	fadeIn:Play()
-	fadeIn.Completed:Wait()
+	local FadeIn = TweenService:Create(DialogueGroup, fadeInInfo, {GroupTransparency = 0})
+	FadeIn:Play()
+	FadeIn.Completed:Wait()
 
 	StartDotAnimation("Press F to pass")
 
-	local skipConn = UserInputService.InputBegan:Connect(function(input)
-		if input.KeyCode == BUTTON and isTyping then
-			isTyping = false
+	local SkipConnection = UserInputService.InputBegan:Connect(function(input)
+		if input.KeyCode == BUTTON and IsTyping then
+			IsTyping = false
 			DialogueText.Text = text
 			PlayTalkSound(person)
 		end
 	end)
-	table.insert(activeConnections, skipConn)
+	table.insert(ActiveConnections, SkipConnection)
 
 	AnimateText(person, text)
 
-	isTyping = false
-	skipConn:Disconnect()
+	IsTyping = false
+	SkipConnection:Disconnect()
 	StartDotAnimation("Press F to continue")
 
-	local timeToSkip = 0
-	local clicked = false
-	local conn
+	local Clicked = false
+	local Connection
 	
-	conn = UserInputService.InputBegan:Connect(function(input)
-		if clicked or input.KeyCode ~= BUTTON then return end
-		conn:Disconnect()
-		clicked = true
+	Connection = UserInputService.InputBegan:Connect(function(input)
+		if Clicked or input.KeyCode ~= BUTTON then return end
+		Connection:Disconnect()
+		Clicked = true
 
 		StopDotAnimation()
 		CleanupDialogue()
-		local fadeOut = TweenService:Create(DialogueGroup, fadeOutInfo, { GroupTransparency = 1 })
-		fadeOut:Play()
-		isVisible = false
+		local FadeOut = TweenService:Create(DialogueGroup, fadeOutInfo, { GroupTransparency = 1 })
+		FadeOut:Play()
+		IsVisible = false
 	end)
-	table.insert(activeConnections, conn)
+	table.insert(ActiveConnections, Connection)
 
-	while not clicked do
+	while not Clicked do
 		RunService.Heartbeat:Wait()
 	end
 end
 
 function Dialogue.IsDialogueActive()
-	return isVisible or isTyping
+	return IsVisible or IsTyping
 end
 
 function Dialogue.SetSpeed(speed: number?)

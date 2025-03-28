@@ -1,5 +1,6 @@
-local HighlightManager = {}
 local TweenService = game:GetService("TweenService")
+
+local HighlightManager = {}
 
 local TWInfo = TweenInfo.new(
     1,

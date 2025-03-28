@@ -1,4 +1,3 @@
--- Starting Services
 local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local RunService = game:GetService("RunService")
@@ -6,58 +5,57 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local ContentProvider = game:GetService("ContentProvider")
 
--- Starting Variables
 local Player = Players.LocalPlayer
-local playerGui = Player:WaitForChild("PlayerGui")
-local loadingUI = script.Parent:WaitForChild("LoadingUI"):Clone()
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local LoadingUI = script.Parent:WaitForChild("LoadingUI"):Clone()
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
-loadingUI.Parent = playerGui
+LoadingUI.Parent = PlayerGui
 UserInputService.MouseIconEnabled = false
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 
-local loadingGroup = loadingUI:WaitForChild("LoadingGroup")
-local round = loadingGroup:WaitForChild("Round")
-local textLoading = loadingGroup:WaitForChild("TextLoading")
+local LoadingGroup = LoadingUI:WaitForChild("LoadingGroup")
+local Round = LoadingGroup:WaitForChild("Round")
+local TextLoading = LoadingGroup:WaitForChild("TextLoading")
 
-local assets = game:GetDescendants()
-local maxAssets = #assets
-local assetsLoaded = 0
+local Assets = game:GetDescendants()
+local MaxAssets = #Assets
+local AssetsLoaded = 0
 
-textLoading.Text = 0 .. " / " .. maxAssets
+TextLoading.Text = 0 .. " / " .. MaxAssets
 
-local function loadGroup(startIndex, endIndex)
-	local group = {}
+local function LoadGroup(startIndex, endIndex)
+	local Group = {}
 	for i = startIndex, endIndex do
-		table.insert(group, assets[i])
+		table.insert(Group, Assets[i])
 	end
 
-	ContentProvider:PreloadAsync(group)
-	assetsLoaded = assetsLoaded + #group
-	textLoading.Text = assetsLoaded .. " / " .. maxAssets
+	ContentProvider:PreloadAsync(Group)
+	AssetsLoaded = AssetsLoaded + #Group
+	TextLoading.Text = AssetsLoaded .. " / " .. MaxAssets
 end
 
 local Connection = RunService.Heartbeat:Connect(function(dt)
-    round.Rotation = (round.Rotation + 180 * dt) % 360
+    Round.Rotation = (Round.Rotation + 180 * dt) % 360
 end)
 
-local index = 1
-while index <= maxAssets do
-	local groupSize = math.random(math.floor(maxAssets/16), math.floor(maxAssets/4))
-	local endIndex = math.min(index + groupSize - 1, maxAssets)
+local Index = 1
+while Index <= MaxAssets do
+	local GroupSize = math.random(math.floor(MaxAssets/16), math.floor(MaxAssets/4))
+	local EndIndex = math.min(Index + GroupSize - 1, MaxAssets)
 
-	loadGroup(index, endIndex)
+	LoadGroup(Index, EndIndex)
 
-	index = endIndex + 1
+	Index = EndIndex + 1
 end
 
 task.wait(1.5)
 
-local Tween = game:GetService("TweenService"):Create(loadingGroup, TweenInfo.new(1.5, Enum.EasingStyle.Linear), { GroupTransparency = 1  })
+local Tween = game:GetService("TweenService"):Create(LoadingGroup, TweenInfo.new(1.5, Enum.EasingStyle.Linear), { GroupTransparency = 1  })
 
 Tween.Completed:Once(function(playbackState)
 	Connection:Disconnect()
-	loadingUI:Destroy()
+	LoadingUI:Destroy()
 end)
 
 Tween:Play()

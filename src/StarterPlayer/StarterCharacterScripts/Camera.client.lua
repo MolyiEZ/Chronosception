@@ -32,8 +32,6 @@ local MouseDrift = 0
 local OscX = 0
 local SwayYaw = 0
 local VelTilt = 0
-local Freq = 10
-local Amp = 10
 
 local CameraSensitivity = 0.15
 local MaxOffset = 25
@@ -49,7 +47,7 @@ local function Lerp(a, b, t)
 end
 
 local function UpdateCamera(dt)
-	dt = dt * 60
+	dt = math.clamp(dt * 55, 0.4, 0.8)
 	if Humanoid.AutoRotate then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 
@@ -68,14 +66,19 @@ local function UpdateCamera(dt)
 		local vel = HumanoidRootPart.AssemblyLinearVelocity
 		local speed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 
-		if dt > 3 then
-			RandomPitch = 0
-			RandomRoll = 0
-		else
-			local tTick = tick()
-			RandomPitch = Lerp(RandomPitch, math.cos(tTick * 0.5 * math.random(10,15)) * ((math.random(5,20) / 200) * dt), 0.05 * dt)
-			RandomRoll = Lerp(RandomRoll, math.cos(tTick * 0.5 * math.random(5,10)) * ((math.random(2,10) / 200) * dt), 0.05 * dt)
+		local Freq, Amp = 0, 0;
+
+		if speed > Config.Run.Threshold then
+			Freq, Amp = Config.Run.Freq, Config.Run.Amp
+		elseif speed > Config.Walk.Threshold then
+			Freq, Amp = Config.Walk.Freq, Config.Walk.Amp
+		elseif speed > Config.Idle.Threshold then
+			Freq, Amp = Config.Idle.Freq, Config.Idle.Amp
 		end
+
+		local tTick = tick()
+		RandomPitch = Lerp(RandomPitch, math.cos(tTick * 0.5 * math.random(10,15)) * ((math.random(5,20) / 200) * dt), 0.05 * dt)
+		RandomRoll = Lerp(RandomRoll, math.cos(tTick * 0.5 * math.random(5,10)) * ((math.random(2,10) / 200) * dt), 0.05 * dt)
 
 		Camera.CFrame = Camera.CFrame * CFrame.fromEulerAnglesXYZ(0, 0, math.rad(MouseDrift)) * CFrame.fromEulerAnglesXYZ(math.rad(OscX * dt), math.rad(SwayYaw * dt), VelTilt) * CFrame.Angles(0, 0, math.rad(OscX * dt * (speed / 5))) * CFrame.fromEulerAnglesXYZ(math.rad(RandomPitch), math.rad(RandomRoll), math.rad(RandomRoll * 10))
 		local WalkSpeed = math.max(Humanoid.WalkSpeed, 0.01)
@@ -88,15 +91,6 @@ local function UpdateCamera(dt)
 			SwayYaw = Lerp(SwayYaw, math.cos(tick() * 0.5 * math.floor(Freq)) * (Freq / 200), 0.25 * dt)
 		else
 			SwayYaw = Lerp(SwayYaw, 0, 0.05 * dt)
-		end
-		if speed > Config.Run.Threshold then
-			Freq, Amp = Config.Run.Freq, Config.Run.Amp
-		elseif speed > Config.Walk.Threshold then
-			Freq, Amp = Config.Walk.Freq, Config.Walk.Amp
-		elseif speed > Config.Idle.Threshold then
-			Freq, Amp = Config.Idle.Freq, Config.Idle.Amp
-		else
-			Amp = 0
 		end
 	else
 		UserInputService.MouseBehavior = Enum.MouseBehavior.Default

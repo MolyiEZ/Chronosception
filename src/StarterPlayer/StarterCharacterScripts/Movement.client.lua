@@ -80,18 +80,18 @@ function WorldMovingDirection(dir)
     if dir == Vector3.zero then
         return dir
     end
-    local angle = math.atan2(dir.X, -dir.Z)
-    local quarterTurn = math.pi / 4
-    angle = -math.round(angle / quarterTurn) * quarterTurn
-    local newX = math.round(-math.sin(angle))
-    local newZ = math.round(-math.cos(angle))
-    if math.abs(newX) <= 1e-10 then
-        newX = 0
+    local Angle = math.atan2(dir.X, -dir.Z)
+    local QuarterTurn = math.pi / 4
+    Angle = -math.round(Angle / QuarterTurn) * QuarterTurn
+    local NewX = math.round(-math.sin(Angle))
+    local NewZ = math.round(-math.cos(Angle))
+    if math.abs(NewX) <= 1e-10 then
+        NewX = 0
     end
-    if math.abs(newZ) <= 1e-10 then
-        newZ = 0
+    if math.abs(NewZ) <= 1e-10 then
+        NewZ = 0
     end
-    return Vector3.new(newX, 0, newZ)
+    return Vector3.new(NewX, 0, NewZ)
 end
 
 function AnimTime(normal: boolean)
@@ -100,24 +100,24 @@ function AnimTime(normal: boolean)
         return 0
     end
 
-    local result
+    local Result
     if not normal then
-        result = PrevAnimationTimePosition + TimeTick
+        Result = PrevAnimationTimePosition + TimeTick
     else
         if TimeTick > DISTANCE then
-            result = PrevAnimationTimePosition - DISTANCE + TimeTick
+            Result = PrevAnimationTimePosition - DISTANCE + TimeTick
         else
-            result = PrevAnimationTimePosition + DISTANCE + TimeTick
+            Result = PrevAnimationTimePosition + DISTANCE + TimeTick
         end
     end
 
-    if result > LIMIT then
-        result = result - LIMIT
-    elseif result < 0 then
-        result = LIMIT - math.abs(result)
+    if Result > LIMIT then
+        Result = Result - LIMIT
+    elseif Result < 0 then
+        Result = LIMIT - math.abs(Result)
     end
 
-    return result
+    return Result
 end
 
 local function WalkAnimSpeed()

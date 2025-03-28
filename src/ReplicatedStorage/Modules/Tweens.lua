@@ -18,9 +18,11 @@ function Tweens.Stun(camera: boolean?)
     if TweenSpeed then
         TweenSpeed:Cancel()
     end
+
     if camera then
         Humanoid.AutoRotate = false
     end
+
     Stunned = true
     Humanoid.WalkSpeed = 0
 end

@@ -44,8 +44,8 @@ local Teleport = {}
 local function _To(timeLine: number)
     TweenService:Create(MotionBlur, TWInfoTeleportOut, {Size = MOTION_BLUR_INTENSITY}):Play()
 
-    local squeezeTween = TweenService:Create(Camera, TWInfoTeleportIn, { FieldOfView = MIN_FOV })
-    squeezeTween:Play()
+    local SqueezeTween = TweenService:Create(Camera, TWInfoTeleportIn, { FieldOfView = MIN_FOV })
+    SqueezeTween:Play()
     task.wait(TWInfoTeleportIn.Time/1.4)
 
     if CurrentTimeLine == ETimeLine.Present then

@@ -10,8 +10,6 @@ local TWInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.I
 
 local CameraShake = {}
 
-local Connection
-
 function CameraShake.Start(duration: number, intensity: number)
     local StartTime = os.clock()
     local Connection
